@@ -1,0 +1,323 @@
+---
+title: "StroopEffect"
+output:
+  word_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+##STROOP EFFECT-The test of a perceptual phenomenon.
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, packages}
+
+#Loading the necessary libraries
+
+library(ggplot2)
+library(dplyr)
+library(GGally)
+library(gridExtra)
+library(reshape2)
+library(RColorBrewer)
+library(tidyr)
+
+```
+
+
+#####Background Information
+In a Stroop task, participants are presented with a list of words, with each word displayed in a color of ink. The participant's task is to say out loud the color of the ink in which the word is printed. The task has two conditions: a congruent words condition, and an incongruent words condition. In the congruent words condition, the words being displayed are color words whose names match the colors in which they are printed: for example RED, BLUE. In the incongruent words condition, the words displayed are color words whose names do not match the colors in which they are printed: for example PURPLE, ORANGE. In each case, we measure the time it takes to name the ink colors in equally-sized lists. Each participant will go through and record a time from each condition.
+
+
+#####Questions For Investigation
+
+
+*1. What is our independent variable? What is our dependent variable?*
+
+Congruency (Congruent/Incongruent) of the words in color as reported by the individuals is an Independant Variable
+
+The Time taken to detect the words in a given list is the dependant variable.
+
+
+*2. What is an appropriate set of hypotheses for this task? What kind of statistical test do you expect to perform? Justify your choices.*
+
+##### H~0~ : $\mu~c~$ - $\mu~i~$ = 0 ;  
+##### H~A~ : $\mu~c~$ - $\mu~i~$ != 0  
+
+Where, H~0~ represents the Null Hypothesis which says that there will not be any significant change. In other words the mean difference of time in both conditions will be same.  
+H~A~ is the Alternative Hypothesis which says that there is a significant difference in the means of time at two conditions (Congruent/Incongruent words) and it is either larger or smaller.  $\mu~c~$ is the Mean of the values of times recorded in reading the Congruent words.  $\mu~i~$ is the Mean of the times in Incongruent list of words.  
+
+I would like to validate a **'Two-Tailed dependant sample t Test at 95% Confidance Interval'** as I chose to test the alternative hypothesis because, I have a strong feeling that atleast in one of the cases the time taken for reading the words in both conditions will be different. Using the t values as the sample we have here is limited(less than 30) and we do not know the Mean or the Variance of the population.
+
+
+*3. Report some descriptive statistics regarding this dataset. Include at least one measure of central tendency and at least one measure of variability.*
+
+
+```{r echo=FALSE, comment=NA, Load_the_Data}
+
+# Loading the .CSV dataset into R
+
+StroopTest <- read.csv('stroopdata.csv')
+
+knitr::kable(StroopTest, caption = "Stroop Data, Times recorded in Seconds")
+
+
+```
+
+
+```{r echo=FALSE, comment=NA, sample_size}
+
+n <- nrow(StroopTest)
+
+sprintf("The number of rows representing the number of samples, n = %d", n)
+
+
+```
+
+
+```{r echo=FALSE, comment=NA, Summary}
+
+summary(StroopTest)
+
+```
+
+
+*Sample size, n = 24*
+
+*Mean* for Congruent words= 14.05 sec and for Incongruent words = 22.02 sec  
+*Median* (which is a better reperesentation of central tendancy) for Congruent words = 14.36 sec and for Incongruent words = 21.02 sec  
+
+Now, let us calculate the Standard Deviation in each case.
+
+The Standard Deviation, SD is calculated using the formula:  
+
+SD = Sqrt ($\sum$(x~i~ - $\mu$)^2^ /n)  
+
+where,  
+x~i~ = Each value of time recorded in sec,  
+$\mu$ is the Mean value of the times,  
+n = number of values in the list.  
+
+
+
+```{r echo=FALSE, comment = NA, Calculations}
+
+std_dev_Congruent <- sd(StroopTest$Congruent) 
+std_dev_Incongruent <- sd(StroopTest$Incongruent)
+
+sprintf("The Standard Deviation of Congruent Values is %.2f sec and Incongruent values is %.2f sec",std_dev_Congruent, std_dev_Incongruent)
+
+
+```
+
+
+*4. Provide one or two visualizations that show the distribution of the sample data. Write one or two sentences noting what you observe about the plot or plots.*
+
+
+
+```{r echo=FALSE, comment=NA, message=FALSE, warning=FALSE, plot1}
+
+p1 <- ggplot(data = StroopTest,
+       aes(x = StroopTest$Congruent)) +
+       xlab('Time taken in reading Congruent Words') +
+  geom_histogram() 
+  
+
+p2 <- ggplot(data = StroopTest,
+       aes(x = StroopTest$Incongruent)) +
+       xlab('Time taken in reading Incongruent Words') +
+  geom_histogram()
+  
+
+grid.arrange(p1, p2, ncol = 2)
+
+```
+
+
+These simple histograms show us that the distribution of the time taken to read the congruent words are slightly right skewed. However, the distribution of the time taken to read the Incongruent words is more normalised with clear outliers.
+
+
+```{r echo=FALSE, comment=NA, message=FALSE, warning=FALSE, plot2}
+
+# Let us tidy the data for visualizing Time Vs Conditions
+
+
+#Adding a column to identify each row in the dataset
+StroopTest.rowname <- mutate(StroopTest, rowname = 1:nrow(StroopTest))
+
+# Tidying the data with congruency in each row with the respective time
+tidy.StroopTest <- gather(StroopTest.rowname, congruency, time, -rowname)
+
+# Calculate the average time for both groups
+tidy.StroopTest %>%
+  group_by(congruency) %>%
+  summarise(mean(time), median(time), sd(time), var(time))
+
+p3 <- ggplot(tidy.StroopTest, aes(y = time, x = congruency, fill = congruency))
+p3 + geom_boxplot()
+
+```
+
+
+This box plot shows the significant difference in the medians of time taken in reading under the two conditions (Congruent and Incongruent). The time taken to read the incongruent words by each person is more than the time taken to read the congruent words.
+
+
+*5. Now, perform the statistical test and report your results. What is your confidence level and your critical statistic value? Do you reject the null hypothesis or fail to reject it? Come to a conclusion in terms of the experiment task. Did the results match up with your expectations?*
+
+
+```{r echo=FALSE, comment=NA, message=FALSE, warning=FALSE, Statistical_Tests}
+
+StroopTest.diff <- StroopTest$Incongruent - StroopTest$Congruent
+mean_diff <- mean(StroopTest.diff)
+sd_diff <- sqrt(sum((StroopTest.diff - mean_diff)^2)/(length(StroopTest.diff) - 1))
+
+StroopTest_diff <- data.frame(StroopTest.diff)
+N <- nrow(StroopTest_diff)
+DF <- n - 1 
+SEM <- sd_diff/sqrt(n)
+t <- mean_diff/SEM
+
+knitr::kable(StroopTest.diff, caption = "The difference of Congruent and Incongruent times sample")
+
+
+```
+
+
+Now with the above sample, we will calculate the values of parameters to test our Hypothesis:  
+
+*Hypothesis*  
+
+H~0~ : $\mu~c~$ - $\mu~i~$ = 0 ;  
+H~A~ : $\mu~c~$ - $\mu~i~$ != 0 
+
+The following formulae are used to calculate:  
+
+    1) Calculate the difference between means.
+         mean_diff = $\mu~c~$ - $\mu~i~$  
+    2) Calculate the standard error of Means
+         EM = $\s~d~$/$\sqrt(n)$, where $\s~d~$ = standard deviation of the differences.
+    3) Calculate the *t-statistical value* : 
+         t = mean_diff / SEM 
+    
+
+```{r echo=FALSE, comment=NA, message=FALSE, warning=FALSE, values}
+
+sprintf("Sample size, N = %d\n Degree of Freedom, DF = %d\n Standard Error of Means, SEM = %.2f\n t Statistical value, t = %.2f\n Mean Difference, mean_diff = %.2f\n Difference in Standard Deviation, sd_diff = %.2f\n", N, DF, SEM, t, mean_diff, sd_diff)
+
+```
+
+
+    4) By using the *t-table* for degree of freedom, **DF (N - 1) = 23**, at **95%** Confidence Interval and ** $\aplha$ = 0.025** in a two-tailed test, we get a t Critical values, $^t^(*)$ = + 2.069 and - 2.069
+    
+
+*Decision*  
+
+Clearly, when t- statistical value is lying outside the t-critical values, beyond the $\alpha$ region, we have proved the Alternative Hypothesis, accepting the fact that there is a significant difference between the time taken to read the congruent and Incongruent words.
+In other words we reject the null, which means $\mu~c~$ - $\mu~i~$ != 0
+
+So, Yes. The results were as expected in the beginning of the analysis.
+
+We can further find the Confidence Interval for 95% as,  
+ CI = (mean_diff - (t x SEM) , mean_diff + (t x SEM))
+
+
+```{r echo=FALSE, comment=NA, message=FALSE, warning=FALSE, CI}
+
+CIlow <- (mean_diff) - (t*SEM)
+CIhigh <- (mean_diff) + (t*SEM)
+
+sprintf("The lower bound for 95 percent CI is: %.2f\n The upper bound for 95 percent CI is: %.2f", CIlow, CIhigh)
+
+
+```    
+
+
+95% of Confidence Interval is (0, 15.93). This is by how much each time of reading can vary between reading the congruent and Incongruent words.
+
+
+#####Cohen's d:  
+
+ 
+```{r echo=FALSE, comment=NA, message=FALSE, warning=FALSE, cohensd}
+
+cohensd <- mean_diff / sd(StroopTest$Congruent)
+
+sprintf("Cohen's d = %.2f", cohensd)
+
+
+```
+
+
+For the case of the paired test, Cohen's d is defined as the difference of means between the post-test and pre-test treatments divided by the standard deviation of the pre-test condition. And it is calculated as:  
+
+ Cohen's d = $\mu~i~$ - $\mu~c~$ / SD~c~ = 2.24  
+
+
+#### Correlation Measures.  
+
+
+```{r echo=FALSE, comment=NA, message=FALSE, warning=FALSE, effectsize}
+
+rsquare <- (t*t) / ((t*t) + DF)
+
+sprintf("The proportion of variablity is %.2f", rsquare)
+
+
+```
+
+
+The percentage of this variability is defined by r^2^ and measured by the formula,  
+  $r^2^ = (t^2^) / (t^2^ + DF)  
+
+
+*6. Optional: What do you think is responsible for the effects observed? Can you think of an alternative or similar task that would result in a similar effect? Some research about the problem will be helpful for thinking about these two questions!*
+
+When the name of a color (e.g., "blue", "green", or "red") is printed in a color that is not denoted by the name (e.g., the word "red" printed in blue ink instead of red ink), the learned brain is confused naming the color of the word and takes longer than when the color of the ink matches the name of the color.
+
+Alternative/supplimental tests of ths phenomenon:  
+
+    Shape incongruency: Print words inside of the shapes they describe (circle, square, triange, etc) in the congruent test, then have the words and shapes be mismatched for the Incongruent test. This is a good alternative test that when paired with the original Stroop test could help in the understanding of whether or not word comprehension is the dominant mechanism here.  
+
+    Audible incongruency: Test audio/visual incongruency by displaying an image of an animal while having a recorded naming of that animal, and have the subject name/make the sound made by the animal (testing not just repetition of wha is told, but the audio/visual association with animal traits). Repeat with incongruently displayed/spoken animals. 
+
+
+####*References*
+
+https://www.rstudio.com/wp-content/uploads/2016/03/rmarkdown-cheatsheet-2.0.pdf
+http://www.statisticshowto.com/probability-and-statistics/hypothesis-testing/t-score-vs-z-score/
+https://s3.amazonaws.com/udacity-hosted-downloads/t-table.jpg
+https://en.wikipedia.org/wiki/Stroop_effect
+
+
+
+
+
+
+
+
+
+
+
+
