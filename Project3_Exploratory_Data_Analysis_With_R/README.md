@@ -1,7 +1,11 @@
 ### RED WINE ANALYSIS USING R
 
-Downloaded a tidy data set containing 1,599 red wines with 11 variables on the chemical properties of the wine. At least 3 wine experts rated the quality of each wine, providing a rating between 0 (very bad) and 10 (very excellent).
+Downloaded a tidy data set from the link given in the project description, containing 1,599 red wines with 11 variables on the chemical properties of the wine. At least 3 wine experts rated the quality of each wine, providing a rating between 0 (very bad) and 10 (very excellent).
 Explored and analysed the data through various statistical visualizations using the R language. The goal of this analysis was to discover which chemical properties influence the quality of red wines.
+
+#### Usage:
+- *Red Wine Analysis.rmd* to be run in **R** which is compiled/knitted to an .html file for readable project submission
+- *wineQualityReds.csv* is the data file used for the analysis
 
 Sections of univariate, bi-variate and multi variate analysis were graphically shown making use of the following R libraries:
 * library(ggplot2)
